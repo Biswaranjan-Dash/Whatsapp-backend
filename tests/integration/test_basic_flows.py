@@ -65,7 +65,7 @@ class TestPatientFlow:
         response = await client.get(f"/api/v1/patients/{fake_id}")
         
         assert response.status_code == 404
-        assert "NotFound" in response.json()["error"]
+        assert "NotFound" in response.json()["detail"]["error"]
 
 
 @pytest.mark.asyncio
@@ -102,7 +102,7 @@ class TestDoctorFlow:
         )
         
         assert response.status_code == 400
-        assert "already exists" in response.json()["message"]
+        assert "already exists" in response.json()["detail"]["message"]
     
     async def test_list_doctors(self, client, test_doctor):
         """Test listing all doctors"""

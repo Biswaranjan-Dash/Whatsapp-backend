@@ -48,7 +48,7 @@ async def check_in(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={"error": "NotFound", "message": error_msg}
             )
-        elif "already checked in" in error_msg.lower():
+        elif "already checked in" in error_msg.lower() or "is already checked_in" in error_msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"error": "AlreadyCheckedIn", "message": error_msg}

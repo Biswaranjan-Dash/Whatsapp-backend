@@ -1,8 +1,9 @@
 import pytest
-import asyncio
+import pytest_asyncio
 from datetime import date, timedelta
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
 from app.main import app
 from app.models import Base
 from app.db.session import get_db
@@ -12,55 +13,56 @@ settings = get_settings()
 
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/clinic_test_db"
 
-test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-TestAsyncSessionLocal = async_sessionmaker(
-    test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
 
-
-async def override_get_db():
-    async with TestAsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for the test session"""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def setup_test_db():
-    """Create test database tables before tests and drop after"""
-    async with test_engine.begin() as conn:
+@pytest_asyncio.fixture(scope="function")
+async def db_session():
+    """Create a new database session and engine for each test"""
+    # Create a fresh engine for this test
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=20,
+        max_overflow=30,
+    )
+    
+    # Setup: create all tables
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    
+    # Create session maker
+    async_session = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
+    
+    # Return the session maker so each request gets its own session
+    yield async_session
+    
+    # Cleanup: dispose engine after test
+    await engine.dispose()
 
 
-@pytest.fixture
-async def client():
-    """Async HTTP client for testing"""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+@pytest_asyncio.fixture(scope="function")
+async def client(db_session):
+    """Async HTTP client for testing with overridden database
+    
+    Each request will get its own database session from the session maker.
+    """
+    async def override_get_db():
+        async with db_session() as session:
+            yield session
+    
+    app.dependency_overrides[get_db] = override_get_db
+    
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+    
+    app.dependency_overrides.clear()
 
 
-@pytest.fixture
-async def test_patient(client):
+@pytest_asyncio.fixture
+async def test_patient(client, db_session):
     """Create a test patient"""
     response = await client.post(
         "/api/v1/patients",
@@ -76,8 +78,8 @@ async def test_patient(client):
     return response.json()
 
 
-@pytest.fixture
-async def test_doctor(client):
+@pytest_asyncio.fixture
+async def test_doctor(client, db_session):
     """Create a test doctor"""
     response = await client.post(
         "/api/v1/doctors",
@@ -91,7 +93,7 @@ async def test_doctor(client):
     return response.json()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_doctor_with_availability(client, test_doctor):
     """Create doctor with availability for today"""
     today = date.today()
@@ -105,11 +107,3 @@ async def test_doctor_with_availability(client, test_doctor):
     )
     assert response.status_code == 200
     return test_doctor
-
-
-@pytest.fixture
-async def clean_db():
-    """Clean database between tests"""
-    async with test_engine.begin() as conn:
-        await conn.execute("TRUNCATE TABLE queue_entries, appointments, doctor_daily_capacities, doctor_daily_availabilities, doctor_masters, patients RESTART IDENTITY CASCADE")
-    yield

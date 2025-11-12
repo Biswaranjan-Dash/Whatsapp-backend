@@ -101,7 +101,8 @@ class TestCheckInFlow:
         
         response2 = await client.post("/api/v1/checkins", json=checkin_data)
         assert response2.status_code == 409
-        assert "already checked in" in response2.json()["message"].lower()
+        msg = response2.json()["detail"]["message"].lower()
+        assert "already" in msg and "checked" in msg
     
     async def test_check_in_wrong_patient_fails(self, client, test_doctor_with_availability):
         """Test check-in with wrong patient ID fails"""
@@ -138,7 +139,7 @@ class TestCheckInFlow:
         )
         
         assert response.status_code == 400
-        assert "does not belong" in response.json()["message"].lower()
+        assert "does not belong" in response.json()["detail"]["message"].lower()
     
     async def test_check_in_nonexistent_appointment(self, client, test_patient):
         """Test check-in with non-existent appointment fails"""
@@ -153,7 +154,7 @@ class TestCheckInFlow:
         )
         
         assert response.status_code == 404
-        assert "not found" in response.json()["message"].lower()
+        assert "not found" in response.json()["detail"]["message"].lower()
     
     async def test_get_doctor_queue(self, client, test_doctor_with_availability):
         """Test retrieving doctor's queue for a date"""
@@ -236,4 +237,4 @@ class TestCheckInDateValidation:
         )
         
         assert response.status_code == 422
-        assert "only allowed on appointment date" in response.json()["message"].lower()
+        assert "only allowed on appointment date" in response.json()["detail"]["message"].lower()

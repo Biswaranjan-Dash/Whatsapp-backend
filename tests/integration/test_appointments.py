@@ -76,7 +76,7 @@ class TestAppointmentBooking:
         )
         
         assert response.status_code == 422
-        assert "not available" in response.json()["message"].lower()
+        assert "not available" in response.json()["detail"]["message"].lower()
     
     async def test_book_appointment_nonexistent_doctor(self, client, test_patient):
         """Test booking with non-existent doctor fails"""
@@ -207,7 +207,7 @@ class TestCapacityEnforcement:
         )
         
         assert response.status_code == 409
-        assert "no available slots" in response.json()["message"].lower()
+        assert "no available slots" in response.json()["detail"]["message"].lower()
 
 
 @pytest.mark.asyncio
@@ -261,4 +261,4 @@ class TestConcurrentBooking:
         
         for failure in failures:
             assert failure["status"] == 409
-            assert "no available slots" in failure["data"]["message"].lower() or "capacity full" in failure["data"]["message"].lower()
+            assert "no available slots" in failure["data"]["detail"]["message"].lower() or "capacity full" in failure["data"]["detail"]["message"].lower()
