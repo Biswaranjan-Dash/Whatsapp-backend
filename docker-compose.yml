@@ -41,7 +41,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: clinic_pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@clinic.local
+      PGADMIN_DEFAULT_EMAIL: admin@clinqo.com
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:

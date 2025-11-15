@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date as dt
 from typing import Optional
 from sqlalchemy import String, Integer, Boolean, Text, Date, DateTime, ForeignKey, UniqueConstraint, Index, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
@@ -58,7 +58,7 @@ class DoctorDailyAvailability(Base):
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("doctor_masters.id"), nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
+    date: Mapped[dt] = mapped_column(Date, nullable=False)
     is_present: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     updated_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -77,7 +77,7 @@ class DoctorDailyCapacity(Base):
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("doctor_masters.id"), nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
+    date: Mapped[dt] = mapped_column(Date, nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     remaining: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     
@@ -95,7 +95,7 @@ class Appointment(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
     doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("doctor_masters.id"), nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
+    date: Mapped[dt] = mapped_column(Date, nullable=False)
     slot: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[AppointmentStatus] = mapped_column(SQLEnum(AppointmentStatus), nullable=False, default=AppointmentStatus.BOOKED)
     idempotency_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
@@ -119,7 +119,7 @@ class QueueEntry(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     appointment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("appointments.id"), nullable=False, unique=True)
     doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("doctor_masters.id"), nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
+    date: Mapped[dt] = mapped_column(Date, nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     checked_in_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     status: Mapped[QueueStatus] = mapped_column(SQLEnum(QueueStatus), nullable=False, default=QueueStatus.WAITING)
