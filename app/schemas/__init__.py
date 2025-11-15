@@ -58,13 +58,13 @@ class AvailabilityUpsert(BaseModel):
 
 
 class AvailabilityResponse(BaseModel):
-    id: UUID
+    id: Optional[UUID] = None
     doctor_id: UUID
     date: date
     is_present: bool
-    notes: Optional[str]
-    updated_by: Optional[str]
-    updated_at: datetime
+    notes: Optional[str] = None
+    updated_by: Optional[str] = None
+    updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True

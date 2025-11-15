@@ -43,6 +43,8 @@ class AppointmentService:
         if not doctor:
             raise ValueError(f"Doctor {doctor_id} not found")
         
+        # Check if doctor is explicitly marked as unavailable
+        # If no availability record exists, doctor is available by default
         availability = await self.doctor_repo.get_availability(doctor_id, appointment_date)
         if availability and not availability.is_present:
             raise ValueError(f"Doctor is not available on {appointment_date}")

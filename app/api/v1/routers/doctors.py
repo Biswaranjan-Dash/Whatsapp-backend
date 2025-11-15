@@ -109,14 +109,34 @@ async def get_availability(
     date: date = Query(..., description="Date in YYYY-MM-DD format"),
     service: DoctorService = Depends(get_doctor_service)
 ):
-    """Get doctor availability for a specific date"""
-    availability = await service.get_availability(doctor_id, date)
-    if not availability:
+    """
+    Get doctor availability for a specific date.
+    Returns available by default if no record exists.
+    """
+    # First verify doctor exists
+    doctor = await service.get_doctor(doctor_id)
+    if not doctor:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "error": "NotFound",
-                "message": f"No availability record found for doctor on {date}"
+                "message": f"Doctor {doctor_id} not found"
             }
         )
+    
+    availability = await service.get_availability(doctor_id, date)
+    
+    # If no availability record exists, doctor is available by default
+    if not availability:
+        from datetime import datetime
+        return {
+            "id": None,
+            "doctor_id": str(doctor_id),
+            "date": date.isoformat(),
+            "is_present": True,
+            "notes": "Available (default)",
+            "updated_by": None,
+            "updated_at": None
+        }
+    
     return availability

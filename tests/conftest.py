@@ -95,15 +95,7 @@ async def test_doctor(client, db_session):
 
 @pytest_asyncio.fixture
 async def test_doctor_with_availability(client, test_doctor):
-    """Create doctor with availability for today"""
-    today = date.today()
-    response = await client.post(
-        f"/api/v1/doctors/{test_doctor['id']}/availability",
-        json={
-            "date": today.isoformat(),
-            "is_present": True,
-            "notes": "Available today"
-        }
-    )
-    assert response.status_code == 200
+    """Create doctor (available by default, no need to set availability)"""
+    # Doctors are now available by default unless explicitly marked unavailable
+    # This fixture now just returns the doctor for backward compatibility
     return test_doctor

@@ -55,7 +55,7 @@ async def check_in(
             )
         elif "only allowed on appointment date" in error_msg.lower():
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={"error": "InvalidDate", "message": error_msg}
             )
         else:

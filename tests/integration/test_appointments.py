@@ -30,6 +30,25 @@ class TestAppointmentBooking:
         assert data["status"] == "booked"
         assert "id" in data
     
+    async def test_book_appointment_without_setting_availability(self, client, test_patient, test_doctor):
+        """Test that doctors are available by default without explicit availability setting"""
+        today = date.today()
+        
+        # Book appointment without setting availability first
+        response = await client.post(
+            "/api/v1/appointments",
+            json={
+                "patient_id": test_patient["id"],
+                "doctor_id": test_doctor["id"],
+                "date": today.isoformat()
+            }
+        )
+        
+        # Should succeed because doctors are available by default
+        assert response.status_code == 201
+        data = response.json()
+        assert data["slot"] == 1
+    
     async def test_book_appointment_idempotency(self, client, test_patient, test_doctor_with_availability):
         """Test idempotent booking - same key returns same appointment"""
         today = date.today()

@@ -48,7 +48,7 @@ async def book_appointment(
             )
         elif "not available" in error_msg.lower():
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={"error": "DoctorUnavailable", "message": error_msg}
             )
         elif "no available slots" in error_msg.lower() or "capacity full" in error_msg.lower():
