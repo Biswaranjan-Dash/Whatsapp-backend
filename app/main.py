@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.api.v1.routers import patients, doctors, appointments, checkins
+from app.api.v1.routers import patients, doctors, appointments, checkins, websockets
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
@@ -22,6 +23,16 @@ app = FastAPI(
     description="Production-quality FastAPI service for patient registration, doctor scheduling, and appointment booking",
     version="1.0.0",
     lifespan=lifespan
+)
+
+
+# Add CORS middleware for WebSocket support
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -47,6 +58,7 @@ app.include_router(patients.router, prefix="/api/v1")
 app.include_router(doctors.router, prefix="/api/v1")
 app.include_router(appointments.router, prefix="/api/v1")
 app.include_router(checkins.router, prefix="/api/v1")
+app.include_router(websockets.router, prefix="/api/v1")
 
 
 if __name__ == "__main__":

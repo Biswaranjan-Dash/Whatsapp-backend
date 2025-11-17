@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Queue Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input, button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .queue-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .doctor-info h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .doctor-info p {
+            color: #666;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .appointments-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .appointment-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .appointment-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .slot-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .patient-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .queue-info {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .queue-position {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge.waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge.checked_in {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.in_progress {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .badge.completed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Central Queue Monitor - All Doctors</h1>
+            
+            <div class="controls">
+                <input type="date" id="queueDate" value="">
+                <button id="subscribeBtn" onclick="subscribe()">Subscribe</button>
+            </div>
+            
+            <div>
+                <span class="status disconnected" id="status">Disconnected</span>
+                <span id="timestamp" class="timestamp"></span>
+            </div>
+        </div>
+        
+        <div class="queue-container" id="queueContainer" style="display: none;">
+            <div class="queue-header">
+                <div class="doctor-info">
+                    <h2 id="dateTitle">-</h2>
+                    <p id="summaryText">-</p>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="totalDoctors">0</div>
+                        <div class="stat-label">Doctors</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="totalAppointments">0</div>
+                        <div class="stat-label">Total Appointments</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="doctorsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentDate = null;
+        
+        // Set default date to today
+        document.getElementById('queueDate').valueAsDate = new Date();
+        
+        function subscribe() {
+            const date = document.getElementById('queueDate').value;
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+            
+            // Close existing connection
+            if (ws) {
+                ws.close();
+            }
+            
+            currentDate = date;
+            
+            // Connect to central WebSocket (no doctor ID needed)
+            const wsUrl = `ws://localhost:8000/api/v1/ws/queue`;
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                updateStatus('connected');
+                
+                // Send subscribe message
+                ws.send(JSON.stringify({
+                    action: 'subscribe',
+                    date: date
+                }));
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                console.log('Received:', message);
+                
+                if (message.error) {
+                    alert('Error: ' + message.error);
+                    return;
+                }
+                
+                if (message.type === 'snapshot' || message.type === 'update') {
+                    updateQueue(message.data);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('disconnected');
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket closed');
+                updateStatus('disconnected');
+            };
+        }
+        
+        function updateStatus(status) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status ' + status;
+            statusEl.textContent = status === 'connected' ? 'Connected ✓' : 'Disconnected';
+        }
+        
+        function updateQueue(data) {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            // Show queue container
+            document.getElementById('queueContainer').style.display = 'block';
+            
+            // Update header
+            document.getElementById('dateTitle').textContent = 'Queue for ' + data.date;
+            document.getElementById('summaryText').textContent = 
+                `${data.total_doctors} doctor(s) with ${data.total_appointments} appointment(s)`;
+            
+            // Update stats
+            document.getElementById('totalDoctors').textContent = data.total_doctors;
+            document.getElementById('totalAppointments').textContent = data.total_appointments;
+            
+            // Update timestamp
+            document.getElementById('timestamp').textContent = 
+                'Last updated: ' + new Date(data.timestamp).toLocaleTimeString();
+            
+            // Render doctors list
+            const doctorsList = document.getElementById('doctorsList');
+            
+            if (data.doctors.length === 0) {
+                doctorsList.innerHTML = `
+                    <div class="empty-state">
+                        <p style="font-size: 18px;">No appointments for this date</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            doctorsList.innerHTML = data.doctors.map(doctorData => {
+                const doctor = doctorData.doctor;
+                const appointments = doctorData.appointments;
+                
+                return `
+                    <div style="margin-bottom: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+                            <div>
+                                <h2 style="margin: 0; color: #333;">${doctor.name}</h2>
+                                <p style="margin: 5px 0 0 0; color: #666;">${doctor.specialty} • Code: ${doctor.code}</p>
+                            </div>
+                            <div style="display: flex; gap: 20px;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #667eea;">${doctorData.total_appointments}</div>
+                                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Appointments</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 24px; font-weight: bold; color: #48bb78;">${doctorData.checked_in_count}</div>
+                                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Checked In</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; gap: 15px;">
+                            ${appointments.map(appt => {
+                                const patient = appt.patient || {};
+                                const queue = appt.queue;
+                                
+                                return `
+                                    <div class="appointment-card">
+                                        <div class="appointment-header">
+                                            <span class="slot-badge">Slot ${appt.slot}</span>
+                                            <span class="badge ${appt.status}">${appt.status.replace('_', ' ')}</span>
+                                        </div>
+                                        
+                                        <div class="patient-info">
+                                            <div class="info-item">
+                                                <span class="info-label">Name:</span>
+                                                <span>${patient.name || '-'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="info-label">Phone:</span>
+                                                <span>${patient.phone || '-'}</span>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="info-label">Age:</span>
+                                                <span>${patient.age || '-'}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        ${queue ? `
+                                            <div class="queue-info">
+                                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                    <div>
+                                                        <span class="info-label">Queue Position:</span>
+                                                        <span class="queue-position">#${queue.position}</span>
+                                                    </div>
+                                                    <span class="badge ${queue.status}">${queue.status.replace('_', ' ')}</span>
+                                                </div>
+                                                ${queue.checked_in_at ? `
+                                                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                                                        Checked in: ${new Date(queue.checked_in_at).toLocaleTimeString()}
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Keep connection alive with ping
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ action: 'ping' }));
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

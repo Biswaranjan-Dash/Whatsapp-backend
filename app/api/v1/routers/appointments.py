@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from uuid import UUID
 from datetime import date
 from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import AppointmentCreate, AppointmentResponse, ErrorResponse
 from app.services.appointment_service import AppointmentService
 from app.api.v1.deps import get_appointment_service
+from app.db.session import get_db
 from app.core.logging import get_logger
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
@@ -24,7 +26,8 @@ logger = get_logger(__name__)
 )
 async def book_appointment(
     appointment_data: AppointmentCreate,
-    service: AppointmentService = Depends(get_appointment_service)
+    service: AppointmentService = Depends(get_appointment_service),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Book an appointment. 
@@ -38,6 +41,11 @@ async def book_appointment(
             appointment_date=appointment_data.date,
             idempotency_key=appointment_data.idempotency_key
         )
+        
+        # Send real-time notification
+        from app.api.v1.routers.websockets import notify_queue_update
+        await notify_queue_update(appointment.doctor_id, appointment.date, db)
+        
         return appointment
     except ValueError as e:
         error_msg = str(e)

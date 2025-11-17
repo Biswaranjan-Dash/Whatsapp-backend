@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from uuid import UUID
 from datetime import date
 from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import CheckInRequest, CheckInResponse, QueueEntryResponse, ErrorResponse
 from app.services.queue_service import QueueService
 from app.api.v1.deps import get_queue_service
+from app.db.session import get_db
 from app.core.logging import get_logger
 
 router = APIRouter(prefix="/checkins", tags=["checkins"])
@@ -24,7 +26,8 @@ logger = get_logger(__name__)
 )
 async def check_in(
     checkin_data: CheckInRequest,
-    service: QueueService = Depends(get_queue_service)
+    service: QueueService = Depends(get_queue_service),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Check in a patient for their appointment.
@@ -36,6 +39,16 @@ async def check_in(
             appointment_id=checkin_data.appointment_id,
             patient_id=checkin_data.patient_id
         )
+        
+        # Send real-time notification
+        from app.api.v1.routers.websockets import notify_queue_update
+        from app.repositories.appointment_repo import AppointmentRepository
+        
+        appt_repo = AppointmentRepository(db)
+        appointment = await appt_repo.get_by_id(checkin_data.appointment_id)
+        if appointment:
+            await notify_queue_update(appointment.doctor_id, appointment.date, db)
+        
         return CheckInResponse(
             queue_position=queue_entry.position,
             checked_in_at=queue_entry.checked_in_at,

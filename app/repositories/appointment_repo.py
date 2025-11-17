@@ -35,6 +35,18 @@ class AppointmentRepository:
         )
         return list(result.scalars().all())
     
+    async def list_by_date(self, appointment_date: date) -> List[Appointment]:
+        """Get all appointments across all doctors for a specific date"""
+        result = await self.db.execute(
+            select(Appointment).where(
+                and_(
+                    Appointment.date == appointment_date,
+                    Appointment.status != AppointmentStatus.CANCELLED
+                )
+            ).order_by(Appointment.doctor_id, Appointment.slot)
+        )
+        return list(result.scalars().all())
+    
     async def atomic_book_slot(
         self, 
         doctor_id: UUID, 
