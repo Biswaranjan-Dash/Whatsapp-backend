@@ -74,6 +74,7 @@ class AppointmentCreate(BaseModel):
     patient_id: UUID
     doctor_id: UUID
     date: date
+    time_slot: Optional[int] = Field(None, ge=0, le=23, description="Time slot 0-23 (each representing 1 hour)")
     idempotency_key: Optional[str] = Field(None, max_length=255)
 
 
@@ -83,6 +84,7 @@ class AppointmentResponse(BaseModel):
     doctor_id: UUID
     date: date
     slot: int
+    time_slot: Optional[int] = None
     status: str
     created_at: datetime
     updated_at: datetime

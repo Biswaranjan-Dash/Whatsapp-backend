@@ -52,6 +52,7 @@ class AppointmentRepository:
         doctor_id: UUID, 
         appointment_date: date,
         patient_id: UUID,
+        time_slot: Optional[int] = None,
         idempotency_key: Optional[str] = None
     ) -> Appointment:
         """
@@ -85,6 +86,7 @@ class AppointmentRepository:
             doctor_id=doctor_id,
             date=appointment_date,
             slot=slot,
+            time_slot=time_slot,
             status=AppointmentStatus.BOOKED,
             idempotency_key=idempotency_key
         )

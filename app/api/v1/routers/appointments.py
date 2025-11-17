@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from uuid import UUID
-from datetime import date
+from datetime import date, datetime
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import AppointmentCreate, AppointmentResponse, ErrorResponse
@@ -35,11 +35,18 @@ async def book_appointment(
     Supports idempotent booking via idempotency_key.
     """
     try:
+        # Generate idempotency key if not provided
+        idempotency_key = appointment_data.idempotency_key
+        if not idempotency_key:
+            timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+            idempotency_key = f"{appointment_data.patient_id}_{appointment_data.doctor_id}_{appointment_data.date}_{timestamp}"
+        
         appointment = await service.book_appointment(
             patient_id=appointment_data.patient_id,
             doctor_id=appointment_data.doctor_id,
             appointment_date=appointment_data.date,
-            idempotency_key=appointment_data.idempotency_key
+            time_slot=appointment_data.time_slot,
+            idempotency_key=idempotency_key
         )
         
         # Send real-time notification

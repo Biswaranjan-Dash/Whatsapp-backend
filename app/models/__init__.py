@@ -97,6 +97,7 @@ class Appointment(Base):
     doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("doctor_masters.id"), nullable=False)
     date: Mapped[dt] = mapped_column(Date, nullable=False)
     slot: Mapped[int] = mapped_column(Integer, nullable=False)
+    time_slot: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[AppointmentStatus] = mapped_column(SQLEnum(AppointmentStatus), nullable=False, default=AppointmentStatus.BOOKED)
     idempotency_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)

@@ -22,6 +22,7 @@ class AppointmentService:
         patient_id: UUID,
         doctor_id: UUID,
         appointment_date: date,
+        time_slot: Optional[int] = None,
         idempotency_key: Optional[str] = None
     ) -> Appointment:
         """
@@ -60,6 +61,7 @@ class AppointmentService:
                 doctor_id=doctor_id,
                 appointment_date=appointment_date,
                 patient_id=patient_id,
+                time_slot=time_slot,
                 idempotency_key=idempotency_key
             )
             
