@@ -10,12 +10,41 @@ from app.models import Base
 from app.db.session import get_db
 import json
 import uuid
+import socket
+
+# Set default timeout for all tests in this module
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.timeout(20)  # 20 second timeout for all tests
+]
 
 
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/clinic_test_db"
-# Use your already running server
-TEST_SERVER_URL = "http://localhost:8000"
-TEST_WS_URL = "ws://localhost:8000"
+# Use server on IP address (the one running with test environment)
+TEST_SERVER_URL = "http://192.168.0.192:8000"
+TEST_WS_URL = "ws://192.168.0.192:8000"
+
+
+def is_server_running(host='192.168.0.192', port=8000):
+    """Check if server is running"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.connect((host, port))
+        sock.close()
+        return True
+    except:
+        return False
+
+
+# Skip all WebSocket tests if server is not running and add timeout
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.timeout(20),  # 20 second timeout for all tests
+    pytest.mark.skipif(
+        not is_server_running(),
+        reason="WebSocket tests require server running at 192.168.0.192:8000. Start with: $env:APP_ENV='test'; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    )
+]
 
 
 # Generate unique codes for tests
@@ -79,8 +108,7 @@ class TestWebSocketConnection:
         doctor = doctor_resp.json()
         
         patient_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "John",
-            "last_name": "Doe",
+            "name": "John Doe",
             "phone": "+1234567890",
             "age": 30
         })
@@ -219,8 +247,7 @@ class TestWebSocketRealTimeUpdates:
         doctor = doctor_resp.json()
         
         patient_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "Update",
-            "last_name": "Test",
+            "name": "Update Test",
             "phone": "+1111111111",
             "age": 25
         })
@@ -270,7 +297,6 @@ class TestWebSocketRealTimeUpdates:
             assert our_doctor['total_appointments'] == 1
     
     @pytest.mark.asyncio
-    @pytest.mark.skip(reason="Check-in API has known issues - returns 500")
     async def test_checkin_triggers_update(self, db_session, http_client):
         """Test that patient check-in sends WebSocket update"""
         # Setup: Create doctor, patient, and appointment
@@ -283,8 +309,7 @@ class TestWebSocketRealTimeUpdates:
         doctor = doctor_resp.json()
         
         patient_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "CheckIn",
-            "last_name": "Patient",
+            "name": "CheckIn Patient",
             "phone": "+2222222222",
             "age": 35
         })
@@ -311,17 +336,21 @@ class TestWebSocketRealTimeUpdates:
             snapshot = json.loads(message_str)
             assert snapshot['type'] == 'snapshot'
             
-            # Find our test appointment
+            # Find our test appointment by ID
             our_appt = None
             for doc_data in snapshot['data']['doctors']:
                 if doc_data['doctor']['name'] == "Dr. CheckIn":
-                    if len(doc_data['appointments']) > 0:
-                        our_appt = doc_data['appointments'][0]
+                    for appt in doc_data['appointments']:
+                        if appt['appointment_id'] == appointment['id']:
+                            our_appt = appt
+                            break
+                    if our_appt:
                         break
             
-            # Queue should be None (not checked in yet)
+            # Our appointment should exist but queue should be None (not checked in yet)
             assert our_appt is not None, "Test appointment not found"
-            assert our_appt['queue'] is None, "Queue should be None before check-in"
+            initial_queue = our_appt['queue']
+            assert initial_queue is None, f"Queue should be None before check-in, got: {initial_queue}"
             
             # Check in patient
             checkin_resp = await http_client.post("/api/v1/checkins", json={
@@ -341,14 +370,22 @@ class TestWebSocketRealTimeUpdates:
             assert update['type'] == 'update'
             
             # Find our doctor's appointment in the update
+            found_queue = False
             for doc_data in update['data']['doctors']:
                 if doc_data['doctor']['name'] == "Dr. CheckIn":
-                    queue = doc_data['appointments'][0]['queue']
-                    assert queue is not None
-                    assert queue['position'] >= 1
-                    assert queue['status'] == 'checked_in'
-                    assert queue['checked_in_at'] is not None
-                    break
+                    for appt in doc_data['appointments']:
+                        if appt['appointment_id'] == appointment['id']:
+                            queue = appt['queue']
+                            assert queue is not None, "Queue should exist after check-in"
+                            assert queue['position'] >= 1
+                            assert queue['status'] == 'waiting'
+                            assert queue['checked_in_at'] is not None
+                            found_queue = True
+                            break
+                    if found_queue:
+                        break
+            
+            assert found_queue, "Could not find checked-in appointment in update"
 
 
 class TestWebSocketMultipleClients:
@@ -367,8 +404,7 @@ class TestWebSocketMultipleClients:
         doctor = doctor_resp.json()
         
         patient_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "Multi",
-            "last_name": "Client",
+            "name": "Multi Client",
             "phone": "+3333333333",
             "age": 40
         })
@@ -438,16 +474,14 @@ class TestWebSocketMultipleDoctors:
         
         # Create patients
         patient1_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "Patient",
-            "last_name": "One",
+            "name": "Patient One",
             "phone": "+4444444444",
             "age": 30
         })
         patient1 = patient1_resp.json()
         
         patient2_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "Patient",
-            "last_name": "Two",
+            "name": "Patient Two",
             "phone": "+5555555555",
             "age": 35
         })
@@ -536,8 +570,7 @@ class TestWebSocketEdgeCases:
         doctor = doctor_resp.json()
         
         patient_resp = await http_client.post("/api/v1/patients", json={
-            "first_name": "Resub",
-            "last_name": "Test",
+            "name": "Resub Test",
             "phone": "+6666666666",
             "age": 45
         })

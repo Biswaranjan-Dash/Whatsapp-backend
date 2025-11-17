@@ -145,15 +145,14 @@ async def get_queue_data(
             "status": appt.status.value,
             "patient": {
                 "id": str(patient.id),
-                "name": f"{patient.first_name} {patient.last_name}".strip() if patient.last_name else patient.first_name,
+                "name": patient.name,
                 "phone": patient.phone,
-                "age": patient.age
+                "age": patient.age,
+                "gender": patient.gender
             } if patient else None,
             "queue": {
                 "position": queue_entry.position,
                 "checked_in_at": queue_entry.checked_in_at.isoformat() if queue_entry.checked_in_at else None,
-                "called_at": queue_entry.called_at.isoformat() if queue_entry.called_at else None,
-                "completed_at": queue_entry.completed_at.isoformat() if queue_entry.completed_at else None,
                 "status": queue_entry.status.value
             } if queue_entry else None
         })
@@ -183,10 +182,7 @@ async def get_queue_data(
 
 
 @router.websocket("/ws/queue")
-async def websocket_queue(
-    websocket: WebSocket,
-    db: AsyncSession = Depends(get_db)
-):
+async def websocket_queue(websocket: WebSocket):
     """
     WebSocket endpoint for real-time queue updates across ALL doctors.
     
@@ -227,16 +223,18 @@ async def websocket_queue(
                 subscribed_date = date_key
                 
                 # Send initial queue data for ALL doctors
-                queue_data = await get_queue_data(db, target_date)
-                await websocket.send_json({
-                    "type": "snapshot",
-                    "data": queue_data
-                })
-                
-                logger.info(
-                    "Client subscribed to central queue",
-                    date=target_date_str
-                )
+                # Create a new database session for this operation
+                from app.db.session import AsyncSessionLocal
+                async with AsyncSessionLocal() as db:
+                    queue_data = await get_queue_data(db, target_date)
+                    await websocket.send_json({
+                        "type": "snapshot",
+                        "data": queue_data
+                    })
+                    logger.info(
+                        "Client subscribed to central queue",
+                        date=target_date_str
+                    )
             
             elif action == "unsubscribe":
                 if subscribed_date:

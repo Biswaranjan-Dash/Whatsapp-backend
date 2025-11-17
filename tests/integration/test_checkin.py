@@ -44,7 +44,7 @@ class TestCheckInFlow:
             patient_response = await client.post(
                 "/api/v1/patients",
                 json={
-                    "first_name": f"QueuePatient{i}",
+                    "name": f"QueuePatient{i}",
                     "phone": f"+919000000{i:03d}"
                 }
             )
@@ -110,13 +110,13 @@ class TestCheckInFlow:
         
         patient1_response = await client.post(
             "/api/v1/patients",
-            json={"first_name": "Patient1", "phone": "+919111111111"}
+            json={"name": "Patient1", "phone": "+919111111111"}
         )
         patient1 = patient1_response.json()
         
         patient2_response = await client.post(
             "/api/v1/patients",
-            json={"first_name": "Patient2", "phone": "+919222222222"}
+            json={"name": "Patient2", "phone": "+919222222222"}
         )
         patient2 = patient2_response.json()
         
@@ -164,7 +164,7 @@ class TestCheckInFlow:
             patient_response = await client.post(
                 "/api/v1/patients",
                 json={
-                    "first_name": f"QueueTest{i}",
+                    "name": f"QueueTest{i}",
                     "phone": f"+919333333{i:03d}"
                 }
             )

@@ -67,14 +67,17 @@ async def test_patient(client, db_session):
     response = await client.post(
         "/api/v1/patients",
         json={
-            "first_name": "John",
-            "last_name": "Doe",
+            "name": "John Doe",
             "age": 30,
+            "gender": "male",
             "phone": "+919876543210",
             "email": "john@example.com"
         }
     )
-    assert response.status_code == 201
+    if response.status_code != 201:
+        print(f"Patient creation failed: {response.status_code}")
+        print(f"Response: {response.text}")
+    assert response.status_code == 201, f"Patient creation failed: {response.text}"
     return response.json()
 
 

@@ -6,9 +6,9 @@ import re
 
 
 class PatientCreate(BaseModel):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: Optional[str] = Field(None, max_length=100)
+    name: str = Field(..., min_length=1, max_length=200)
     age: Optional[int] = Field(None, ge=0, le=150)
+    gender: Optional[str] = Field(None, max_length=20)
     phone: str = Field(..., min_length=10, max_length=20)
     email: Optional[EmailStr] = None
     
@@ -23,9 +23,9 @@ class PatientCreate(BaseModel):
 
 class PatientResponse(BaseModel):
     id: UUID
-    first_name: str
-    last_name: Optional[str]
+    name: str
     age: Optional[int]
+    gender: Optional[str]
     phone: str
     email: Optional[str]
     created_at: datetime

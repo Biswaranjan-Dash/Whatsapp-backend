@@ -8,9 +8,38 @@ from datetime import date, timedelta
 import websockets
 import json
 import uuid
+import socket
 
 
-TEST_WS_URL = "ws://localhost:8000"
+TEST_WS_URL = "ws://192.168.0.192:8000"
+
+# Set default timeout for all tests in this module
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.timeout(20)  # 20 second timeout for all tests
+]
+
+
+def is_server_running(host='192.168.0.192', port=8000):
+    """Check if server is running"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.connect((host, port))
+        sock.close()
+        return True
+    except:
+        return False
+
+
+# Skip all WebSocket tests if server is not running and add timeout
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.timeout(20),  # 20 second timeout for all tests
+    pytest.mark.skipif(
+        not is_server_running(),
+        reason="WebSocket tests require server running at 192.168.0.192:8000. Start with: $env:APP_ENV='test'; uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    )
+]
 
 
 def get_unique_id():

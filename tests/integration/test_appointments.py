@@ -169,7 +169,7 @@ class TestCapacityEnforcement:
             patient_response = await client.post(
                 "/api/v1/patients",
                 json={
-                    "first_name": f"Patient{i}",
+                    "name": f"Patient{i}",
                     "phone": f"+9191234567{i:02d}"
                 }
             )
@@ -196,8 +196,8 @@ class TestCapacityEnforcement:
             patient_response = await client.post(
                 "/api/v1/patients",
                 json={
-                    "first_name": f"Patient{i}",
-                    "phone": f"+9191234560{i:02d}"
+                    "name": f"Patient{i}",
+                    "phone": f"+9198765432{i:02d}"
                 }
             )
             patient = patient_response.json()
@@ -211,10 +211,11 @@ class TestCapacityEnforcement:
                 }
             )
         
-        patient_11 = await client.post(
+        patient_response = await client.post(
             "/api/v1/patients",
-            json={"first_name": "Patient11", "phone": "+919999999999"}
+            json={"name": "Patient11", "phone": "+919999999999"}
         )
+        patient_11 = patient_response
         
         response = await client.post(
             "/api/v1/appointments",
@@ -242,14 +243,14 @@ class TestConcurrentBooking:
         
         patients = []
         for i in range(30):
-            response = await client.post(
+            patient_response = await client.post(
                 "/api/v1/patients",
                 json={
-                    "first_name": f"ConcurrentPatient{i}",
-                    "phone": f"+9198765432{i:02d}"
+                    "name": f"ConcurrentPatient{i}",
+                    "phone": f"+9195555555{i:02d}"
                 }
             )
-            patients.append(response.json())
+            patients.append(patient_response.json())
         
         async def book_appointment(patient_id, index):
             """Book appointment for a patient"""

@@ -13,9 +13,9 @@ class TestPatientFlow:
         response = await client.post(
             "/api/v1/patients",
             json={
-                "first_name": "Alice",
-                "last_name": "Johnson",
+                "name": "Alice Johnson",
                 "age": 25,
+                "gender": "female",
                 "phone": "+919123456789",
                 "email": "alice@example.com"
             }
@@ -23,9 +23,9 @@ class TestPatientFlow:
         
         assert response.status_code == 201
         data = response.json()
-        assert data["first_name"] == "Alice"
-        assert data["last_name"] == "Johnson"
+        assert data["name"] == "Alice Johnson"
         assert data["age"] == 25
+        assert data["gender"] == "female"
         assert data["phone"] == "+919123456789"
         assert "id" in data
         assert "created_at" in data
@@ -33,9 +33,9 @@ class TestPatientFlow:
     async def test_create_patient_duplicate_phone(self, client):
         """Test creating patient with duplicate phone returns existing"""
         patient_data = {
-            "first_name": "Bob",
-            "last_name": "Smith",
+            "name": "Bob Smith",
             "age": 40,
+            "gender": "male",
             "phone": "+919998887777",
             "email": "bob@example.com"
         }
@@ -57,7 +57,7 @@ class TestPatientFlow:
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == test_patient["id"]
-        assert data["first_name"] == test_patient["first_name"]
+        assert data["name"] == test_patient["name"]
     
     async def test_get_nonexistent_patient(self, client):
         """Test retrieving non-existent patient returns 404"""
