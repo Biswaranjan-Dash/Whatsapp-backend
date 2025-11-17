@@ -20,7 +20,6 @@ pytestmark = [
 
 
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/clinic_test_db"
-# Use server on IP address (the one running with test environment)
 TEST_SERVER_URL = "http://192.168.0.192:8000"
 TEST_WS_URL = "ws://192.168.0.192:8000"
 

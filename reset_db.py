@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.models import Base
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/clinic_db"
+DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/appointment_db"
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/clinic_test_db"
 
 async def reset_database():
