@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   ArrowUpDown,
   CalendarClock,
+  Home,
 } from "lucide-react";
 import { listDoctors, setDoctorAvailability, getDoctorAvailability } from "@/lib/api";
 import type { Doctor } from "@/types/appointment";
@@ -181,9 +182,10 @@ export default function DoctorListsPage() {
             </div>
             <button
               onClick={() => router.push("/")}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 hover:border-blue-300 transition-colors"
             >
-              Back to Home
+              <Home className="h-4 w-4" />
+              Home
             </button>
           </div>
         </div>

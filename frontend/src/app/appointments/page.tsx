@@ -6,7 +6,8 @@ import { ConnectionStatusIndicator } from "@/components/ConnectionStatus";
 import { DoctorSection } from "@/components/DoctorSection";
 import { DashboardLoader } from "@/components/DashboardLoader";
 import { formatDate } from "@/lib/utils";
-import { Calendar } from "lucide-react";
+import { Calendar, Home } from "lucide-react";
+import Link from "next/link";
 
 export default function AppointmentsPage() {
   const [selectedDate, setSelectedDate] = useState<string>(() => {
@@ -65,13 +66,22 @@ export default function AppointmentsPage() {
       <header className="sticky top-0 z-10 border-b border-blue-100 bg-white/80 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Appointment Dashboard
-              </h1>
-              <p className="text-sm text-gray-600">
-                Real-time queue monitoring system
-              </p>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              >
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Appointment Dashboard
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Real-time queue monitoring system
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
