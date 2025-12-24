@@ -17,7 +17,9 @@ export function formatDate(dateString: string): string {
 
 export function formatTime(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleTimeString("en-US", {
+  // Add 5 hours 30 minutes for IST (UTC+5:30)
+  const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+  return istDate.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
   });
