@@ -15,6 +15,7 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const isInitialMount = useRef(true);
   const maxReconnectAttempts = 5;
   const baseDelay = 1000;
 
@@ -40,71 +41,95 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
   }, []);
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    // Skip if already connected or connecting
+    if (wsRef.current?.readyState === WebSocket.OPEN || 
+        wsRef.current?.readyState === WebSocket.CONNECTING) {
       return;
     }
 
-    setStatus("connecting");
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    try {
+      setStatus("connecting");
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
 
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-      setStatus("connected");
-      reconnectAttemptsRef.current = 0;
-
-      // Subscribe to the date
-      ws.send(
-        JSON.stringify({
-          action: "subscribe",
-          date: date,
-        })
-      );
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-
-        if (message.type === "snapshot" && message.data) {
-          setData(message.data);
-          onSnapshotRef.current?.(message.data);
-        } else if (message.type === "update" && message.data) {
-          setData(message.data);
-          onUpdateRef.current?.(message.data);
-        } else if (message.type === "error") {
-          console.error("WebSocket error:", message.error);
-          onErrorRef.current?.(message.error || "Unknown error");
+      ws.onopen = () => {
+        if (isInitialMount.current) {
+          isInitialMount.current = false;
         }
-      } catch (err) {
-        console.error("Failed to parse WebSocket message:", err);
-      }
-    };
+        setStatus("connected");
+        reconnectAttemptsRef.current = 0;
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setStatus("error");
-    };
+        // Subscribe to the date
+        ws.send(
+          JSON.stringify({
+            action: "subscribe",
+            date: date,
+          })
+        );
+      };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
-      setStatus("disconnected");
-      wsRef.current = null;
+      ws.onmessage = (event) => {
+        try {
+          const message: WebSocketMessage = JSON.parse(event.data);
 
-      // Attempt to reconnect with exponential backoff
-      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-        const delay = baseDelay * Math.pow(2, reconnectAttemptsRef.current);
-        console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current += 1;
-          connect();
-        }, delay);
-      } else {
-        console.error("Max reconnection attempts reached");
+          if (message.type === "snapshot" && message.data) {
+            setData(message.data);
+            onSnapshotRef.current?.(message.data);
+          } else if (message.type === "update" && message.data) {
+            setData(message.data);
+            onUpdateRef.current?.(message.data);
+          } else if (message.type === "error") {
+            console.error("WebSocket error:", message.error);
+            onErrorRef.current?.(message.error || "Unknown error");
+          }
+        } catch (err) {
+          console.error("Failed to parse WebSocket message:", err);
+        }
+      };
+
+      ws.onerror = () => {
+        // WebSocket error events don't contain useful error info
+        // The actual error details will be in the onclose event
         setStatus("error");
-      }
-    };
+      };
+
+      ws.onclose = (event) => {
+        const wasClean = event.wasClean;
+        const code = event.code;
+        const reason = event.reason || "Connection closed";
+        
+        if (!wasClean) {
+          console.warn(`WebSocket closed unexpectedly: ${code} - ${reason}`);
+        }
+        
+        setStatus("disconnected");
+        wsRef.current = null;
+
+        // Don't reconnect if this is an intentional close (code 1000)
+        if (code === 1000) {
+          return;
+        }
+
+        // Attempt to reconnect with exponential backoff
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          const delay = baseDelay * Math.pow(2, reconnectAttemptsRef.current);
+          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current += 1;
+            connect();
+          }, delay);
+        } else {
+          console.error("Max reconnection attempts reached");
+          setStatus("error");
+          onErrorRef.current?.("Failed to connect to WebSocket after multiple attempts");
+        }
+      };
+    } catch (error) {
+      console.error("Failed to create WebSocket connection:", error);
+      setStatus("error");
+      onErrorRef.current?.("Failed to initialize WebSocket connection");
+    }
   }, [url, date]);
 
   const resubscribe = useCallback(() => {
