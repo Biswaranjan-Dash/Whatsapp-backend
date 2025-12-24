@@ -1,0 +1,17 @@
+First copy all the envs from test env or local env
+Then run the following commands
+
+Terminal 1: (backend)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+docker-compose up -d postgres (after starting the docker application gui)
+alembic upgrade head
+uvicorn app.main:app --reload
+
+
+
+Termial 2:(frontend)
+cd frontend
+bun install
+bun run dev
