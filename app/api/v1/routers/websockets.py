@@ -162,10 +162,10 @@ async def get_queue_data(
         doctor_data["appointments"].sort(key=lambda x: x["slot"])
         doctor_data["total_appointments"] = len(doctor_data["appointments"])
         
-        # Calculate checked-in count
+        # Calculate checked-in count based on appointment status
         doctor_data["checked_in_count"] = sum(
             1 for appt in doctor_data["appointments"] 
-            if appt["queue"] and appt["queue"]["status"] == "checked_in"
+            if appt["status"] == "checked_in"
         )
     
     # Convert to list and sort by doctor name
