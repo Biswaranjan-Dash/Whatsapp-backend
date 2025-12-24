@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, Clock, Users, Zap } from "lucide-react";
+import { CalendarCheck, Clock, Users, Zap, UserPlus } from "lucide-react";
 
 export default function Home() {
   return (
@@ -29,12 +29,20 @@ export default function Home() {
           {/* CTA Buttons */}
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
             <Link
-              href="/appointments"
+              href="/register-patient"
               className="group inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl hover:scale-105"
+            >
+              <UserPlus className="h-5 w-5" />
+              Register & Book
+              <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
+            </Link>
+            
+            <Link
+              href="/appointments"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-gray-300 bg-white px-8 py-3.5 text-base font-semibold text-gray-700 transition-all hover:border-gray-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-gray-500"
             >
               <CalendarCheck className="h-5 w-5" />
               View Dashboard
-              <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
             </Link>
             
             <a

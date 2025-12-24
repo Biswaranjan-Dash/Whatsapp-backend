@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from uuid import UUID
+from typing import Optional
 from app.schemas import PatientCreate, PatientResponse, ErrorResponse
 from app.services.patient_service import PatientService
 from app.api.v1.deps import get_patient_service
@@ -28,6 +29,30 @@ async def create_patient(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": "ValidationError", "message": str(e)}
+        )
+
+
+@router.get(
+    "/search",
+    response_model=Optional[PatientResponse],
+    responses={400: {"model": ErrorResponse}}
+)
+async def search_patient(
+    phone: str = Query(..., description="Phone number to search"),
+    service: PatientService = Depends(get_patient_service)
+):
+    """Search for patient by phone number"""
+    try:
+        # Normalize phone number
+        import re
+        cleaned_phone = re.sub(r'[^\d+]', '', phone)
+        patient = await service.get_patient_by_phone(cleaned_phone)
+        return patient
+    except Exception as e:
+        logger.error("Failed to search patient", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "SearchError", "message": str(e)}
         )
 
 

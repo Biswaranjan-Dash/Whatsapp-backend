@@ -27,11 +27,18 @@ export interface QueueEntry {
 export type AppointmentStatus = "booked" | "checked_in" | "cancelled" | "completed";
 
 export interface Appointment {
-  appointment_id: string;
+  id: string;
+  appointment_id?: string; // Legacy support
+  patient_id: string;
+  doctor_id: string;
+  date: string;
   slot: number;
+  time_slot?: number | null;
   status: AppointmentStatus;
   patient: Patient;
   queue: QueueEntry | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DoctorWithAppointments {
