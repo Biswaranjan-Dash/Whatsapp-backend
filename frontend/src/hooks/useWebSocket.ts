@@ -12,6 +12,7 @@ interface UseWebSocketOptions {
 export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWebSocketOptions) {
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [data, setData] = useState<QueueSnapshot | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -74,6 +75,7 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
 
           if (message.type === "snapshot" && message.data) {
             setData(message.data);
+            setIsInitializing(false); // Mark initialization complete on first snapshot
             onSnapshotRef.current?.(message.data);
           } else if (message.type === "update" && message.data) {
             setData(message.data);
@@ -91,6 +93,7 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
         // WebSocket error events don't contain useful error info
         // The actual error details will be in the onclose event
         setStatus("error");
+        setIsInitializing(false); // Stop initializing on error
       };
 
       ws.onclose = (event) => {
@@ -122,12 +125,14 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
         } else {
           console.error("Max reconnection attempts reached");
           setStatus("error");
+          setIsInitializing(false);
           onErrorRef.current?.("Failed to connect to WebSocket after multiple attempts");
         }
       };
     } catch (error) {
       console.error("Failed to create WebSocket connection:", error);
       setStatus("error");
+      setIsInitializing(false);
       onErrorRef.current?.("Failed to initialize WebSocket connection");
     }
   }, [url, date]);
@@ -146,6 +151,7 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
 
   const retry = useCallback(() => {
     reconnectAttemptsRef.current = 0;
+    setIsInitializing(true);
     disconnect();
     connect();
   }, [connect, disconnect]);
@@ -164,5 +170,5 @@ export function useWebSocket({ url, date, onSnapshot, onUpdate, onError }: UseWe
     }
   }, [date, resubscribe]);
 
-  return { status, data, retry };
+  return { status, data, isInitializing, retry };
 }
