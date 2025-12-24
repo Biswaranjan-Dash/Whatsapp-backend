@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, Clock, Users, Zap, UserPlus } from "lucide-react";
+import { CalendarCheck, Clock, Users, Zap, UserPlus, Stethoscope } from "lucide-react";
 
 export default function Home() {
   return (
@@ -43,6 +43,14 @@ export default function Home() {
             >
               <CalendarCheck className="h-5 w-5" />
               View Dashboard
+            </Link>
+
+            <Link
+              href="/doctor-lists"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-blue-300 bg-blue-50 px-8 py-3.5 text-base font-semibold text-blue-700 transition-all hover:border-blue-400 hover:bg-blue-100 hover:shadow-md dark:border-blue-600 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:border-blue-500"
+            >
+              <Stethoscope className="h-5 w-5" />
+              Manage Doctors
             </Link>
             
             <a

@@ -46,11 +46,23 @@ async def create_doctor(
     response_model=List[DoctorResponse],
 )
 async def list_doctors(
+    date: date = Query(None, description="Include availability for this date"),
     service: DoctorService = Depends(get_doctor_service)
 ):
-    """List all doctors"""
-    doctors = await service.list_doctors()
-    return doctors
+    """List all doctors, optionally with availability for a specific date"""
+    if date:
+        doctors_with_availability = await service.list_doctors_with_availability(date)
+        # Return doctors with availability info embedded
+        return [
+            {
+                **doctor["doctor"].__dict__,
+                "is_available": doctor["is_available"]
+            }
+            for doctor in doctors_with_availability
+        ]
+    else:
+        doctors = await service.list_doctors()
+        return doctors
 
 
 @router.get(

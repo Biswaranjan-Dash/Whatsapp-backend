@@ -54,3 +54,18 @@ class DoctorService:
     ) -> Optional[DoctorDailyAvailability]:
         """Get doctor availability for a specific date"""
         return await self.repo.get_availability(doctor_id, availability_date)
+    
+    async def list_doctors_with_availability(self, availability_date: date) -> List[dict]:
+        """List all doctors with their availability for a specific date"""
+        doctors = await self.repo.list_all()
+        result = []
+        
+        for doctor in doctors:
+            availability = await self.repo.get_availability(doctor.id, availability_date)
+            result.append({
+                "doctor": doctor,
+                "availability": availability,
+                "is_available": availability.is_present if availability else True
+            })
+        
+        return result
