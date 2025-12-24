@@ -31,8 +31,8 @@ export function AppointmentCard({
     setOptimisticStatus("checked_in");
 
     try {
-      await checkInPatient(appointment.id, appointment.patient.id);
-      onCheckInSuccess?.(appointment.id);
+      await checkInPatient(appointment.appointment_id, appointment.patient.id);
+      onCheckInSuccess?.(appointment.appointment_id);
     } catch (error) {
       // Rollback optimistic update
       setOptimisticStatus(appointment.status);

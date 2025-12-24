@@ -134,7 +134,7 @@ export default function RegisterPatientPage() {
         time_slot: selectedTimeSlot
       });
       
-      setAppointmentId(appointment.id);
+      setAppointmentId(appointment.id || appointment.appointment_id);
       setCurrentStep("success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed");
